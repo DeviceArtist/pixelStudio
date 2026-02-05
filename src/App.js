@@ -1,7 +1,7 @@
 
 import './App.css';
 import { useEffect, useState, useRef } from 'react';
-import { Modal, Button, Form, Input, Space, Drawer, Tabs, Card, Slider, message } from 'antd';
+import { Image, Modal, Button, Form, Input, Space, Drawer, Tabs, Card, Slider, message } from 'antd';
 import {
   FileImageOutlined,
   ImportOutlined,
@@ -13,14 +13,18 @@ import {
   ZoomInOutlined,
   ZoomOutOutlined,
   DownloadOutlined
-
 } from '@ant-design/icons';
+import * as monaco from 'monaco-editor';
+import { loader } from '@monaco-editor/react';
+import Editor from '@monaco-editor/react';
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import { docco } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 const { TextArea } = Input;
 
 
 function App() {
+  console.log(monaco)
+  loader.config({ monaco });
   const [messageApi, contextHolder] = message.useMessage();
   const [width, setWidth] = useState(0);
   const [height, setHeight] = useState(0);
@@ -37,6 +41,7 @@ function App() {
   const [base64, setBase64] = useState("");
   const [eraserMode, setEraserMode] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const [sampleCode, setSampleCode] = useState("");
 
   // 初始化像素网格
   const makePixels = (w, h) => {
@@ -91,8 +96,7 @@ function App() {
 
     setCode(text);
 
-    let t = `
-from machine import Pin, I2C
+    let t = `from machine import Pin, I2C
 import ssd1306
 import framebuf
 import time
@@ -138,6 +142,23 @@ display.show()
     form.setFieldsValue({ width: 8, height: 8 });
     makePixels(8, 8);
   }, [])
+
+  useEffect(() => {
+    fetch("/default.txt").then(res => res.text()).then(text => setSampleCode(text));
+  }, [])
+
+  useEffect(() => {
+    if (monaco) {
+      console.log('here is the monaco instance:', monaco);
+      monaco.editor.EditorOptions.minimap.defaultValue.enabled = false;
+      if (importisOpen) {
+        monaco.editor.EditorOptions.readOnly.defaultValue = false;
+      }
+      if (exportisOpen) {
+        monaco.editor.EditorOptions.readOnly.defaultValue = true;
+      }
+    }
+  }, [monaco, importisOpen, exportisOpen]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -209,12 +230,25 @@ display.show()
           style={{ width: "100%" }}
         >
           <Form.Item name="code" label="code" rules={[{ required: true }]}>
-            <TextArea autoSize />
+            <TextArea autoSize style={{ display: "none" }} />
+            <Editor
+              height="200px"
+              language="javascript"
+              onChange={(value) => {
+                setSampleCode(value);
+                importForm.setFieldsValue({
+                  code: value
+                })
+              }}
+              value={sampleCode}
+
+            />
           </Form.Item>
           <Form.Item>
             <Button htmlType="submit">OK</Button>
           </Form.Item>
         </Form>
+
       </Drawer>
 
       <Drawer
@@ -267,9 +301,14 @@ display.show()
                   });
                 }
               }} />
-              <SyntaxHighlighter language="python" style={docco}>
+              <Editor
+                height="500px"
+                language="python"
+                value={microPythonCode}
+              />
+              {/* <SyntaxHighlighter language="python" style={docco}>
                 {microPythonCode}
-              </SyntaxHighlighter>
+              </SyntaxHighlighter> */}
             </div>,
           },
           {
@@ -283,7 +322,7 @@ display.show()
             }} />} onClick={() => {
 
             }} />} style={{ width: 300 }}>
-              <img src={base64} />
+              <Image src={base64} />
             </Card>,
           }
         ]} onChange={() => { }} />
