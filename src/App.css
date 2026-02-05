@@ -1,0 +1,51 @@
+.app {
+  width: 90%;
+  margin: 20px auto;
+}
+
+.cp {
+  display: flex;
+  gap: 10px;
+  margin: 20px auto;
+}
+
+.editor {
+  margin: 20px auto;
+}
+
+.row {
+  display: flex;
+}
+
+.pixel {
+  width: 20px;
+  height: 20px;
+  background-color: aliceblue;
+  border: solid 1px;
+  margin: -1px;
+}
+
+.pixel:last-child {
+  width: 19px;
+}
+
+.row:last-child .pixel {
+  height: 19px;
+}
+
+.black {
+  background-color: #000;
+}
+
+.white {
+  background-color: #fff;
+}
+
+.code {
+  margin-left: 20px;
+}
+
+textarea {
+  width: 100%;
+  height: 300px;
+}
