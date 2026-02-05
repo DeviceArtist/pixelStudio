@@ -1,7 +1,7 @@
 
 import './App.css';
 import { useEffect, useState, useRef } from 'react';
-import { Modal, Button, Form, Input, Space, Drawer, Tabs, Card } from 'antd';
+import { Modal, Button, Form, Input, Space, Drawer, Tabs, Card, Slider, message } from 'antd';
 import {
   FileImageOutlined,
   ImportOutlined,
@@ -9,14 +9,21 @@ import {
   GithubOutlined,
   InfoCircleOutlined,
   ClearOutlined,
+  CopyOutlined,
   ZoomInOutlined,
   ZoomOutOutlined,
   DownloadOutlined
 
 } from '@ant-design/icons';
+import SyntaxHighlighter from 'react-syntax-highlighter';
+import { docco } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 const { TextArea } = Input;
 
+
 function App() {
+  const [messageApi, contextHolder] = message.useMessage();
+  const [width, setWidth] = useState(0);
+  const [height, setHeight] = useState(0);
   const [aboutisOpen, setAboutisOpen] = useState(false);
   const [newImageisModalOpen, setNewImageIsModalOpen] = useState(false);
   const [importisOpen, setImportisOpen] = useState(false);
@@ -32,14 +39,13 @@ function App() {
   const [zoom, setZoom] = useState(1);
 
   // 初始化像素网格
-  const makePixels = (rows, cols) => {
-    const canvas = canvasRef.current;
-    canvas.width = rows;
-    canvas.height = cols;
+  const makePixels = (w, h) => {
+    setWidth(w);
+    setHeight(h)
     const arr = [];
-    for (let i = 0; i < cols; i++) {
+    for (let i = 0; i < h; i++) {
       const row = [];
-      for (let j = 0; j < rows; j++) {
+      for (let j = 0; j < w; j++) {
         row.push(0);
       }
       arr.push(row);
@@ -101,7 +107,7 @@ display.fill(0)
 def draw(ICON):
     for y, row in enumerate(ICON):
         for x, value in enumerate(row):
-            display.pixel(x, y, value)
+            display.fill_rect(x*${zoom}, y*${zoom},x*${zoom}+${zoom},y*${zoom}+${zoom},value)
 
 
 draw(ICON)
@@ -118,7 +124,7 @@ display.show()
     pixels.map((row, rowIndex) => {
       row.map((pixel, colIndex) => {
         ctx.fillStyle = pixel === 1 ? "#000" : "#fff";
-        ctx.fillRect(colIndex, rowIndex, 1, 1);
+        ctx.fillRect(colIndex * zoom, rowIndex * zoom, zoom, zoom);
       });
     });
   }
@@ -132,6 +138,14 @@ display.show()
     form.setFieldsValue({ width: 8, height: 8 });
     makePixels(8, 8);
   }, [])
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    canvas.width = width * zoom;
+    canvas.height = height * zoom;
+    DrawToCanvas();
+    updateCode();
+  }, [zoom, width, height]);
 
   return (
     <div className="app">
@@ -165,7 +179,7 @@ display.show()
       </Modal>
 
       <Drawer
-        title="About version 0.1"
+        title="About version 0.2"
         placement="bottom"
         closable={{ 'aria-label': 'Close Button' }}
         onClose={() => { setAboutisOpen(false) }}
@@ -213,25 +227,63 @@ display.show()
           {
             key: '1',
             label: 'Array Code',
-            children: <TextArea value={code} autoSize />,
+            children: <div>
+              {contextHolder}
+              <Button icon={<CopyOutlined />} onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(code);
+                  messageApi.open({
+                    type: 'success',
+                    content: 'Copied!',
+                  });
+                } catch (err) {
+                  messageApi.open({
+                    type: 'error',
+                    content: 'Failed to copy!',
+                  });
+                }
+              }} />
+              <SyntaxHighlighter language="javascipt" style={docco}>
+                {code}
+              </SyntaxHighlighter>
+            </div>,
           },
           {
             key: '2',
             label: 'microPython Code',
-            children: <TextArea value={microPythonCode} autoSize />,
+            children: <div>
+              {contextHolder}
+              <Button icon={<CopyOutlined />} onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(microPythonCode);
+                  messageApi.open({
+                    type: 'success',
+                    content: 'Copied!',
+                  });
+                } catch (err) {
+                  messageApi.open({
+                    type: 'error',
+                    content: 'Failed to copy!',
+                  });
+                }
+              }} />
+              <SyntaxHighlighter language="python" style={docco}>
+                {microPythonCode}
+              </SyntaxHighlighter>
+            </div>,
           },
           {
             key: '3',
             label: 'image',
-            children: <Card title="image" extra={<Space>
-              <Button icon={<ZoomInOutlined />} onClick={() => {
-                setZoom(zoom * 2);
-              }} />
-              <Button icon={<ZoomOutOutlined />} onClick={() => {
-                setZoom(zoom / 2);
-              }} />
-            </Space>} style={{ width: 300 }}>
-              <img style={{zoom:zoom}} src={base64} />
+            children: <Card title="image" extra={<Button icon={<DownloadOutlined onClick={() => {
+              const a = document.createElement("a");
+              a.href = base64;
+              a.download = `pixel.jpg`;
+              a.click();
+            }} />} onClick={() => {
+
+            }} />} style={{ width: 300 }}>
+              <img src={base64} />
             </Card>,
           }
         ]} onChange={() => { }} />
@@ -275,9 +327,9 @@ display.show()
         </Space>
       </div>
 
-      <Space orientation="vertical" style={{ margin: "20px auto" }}>
+      <Space orientation="vertical" style={{ margin: "20px auto", width: "100%" }}>
 
-        <Card title="editor">
+        <Card title="editor" style={{ width: "100%" }}>
           <div className='editor'>
             {pixels.map((row, rowIndex) =>
               <div className='row'>
@@ -296,7 +348,7 @@ display.show()
           </div>
         </Card>
 
-        <Card title="preview">
+        <Card title="preview" extra={<Slider value={zoom} min={1} max={10} onChange={(value) => setZoom(value)} style={{ width: "100px" }} />}>
           <canvas ref={canvasRef}></canvas>
         </Card>
       </Space>
