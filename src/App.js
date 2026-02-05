@@ -1,7 +1,7 @@
 
 import './App.css';
-import { useEffect, useState } from 'react';
-import { Modal, Button, Form, Input, Space, Drawer, Tabs } from 'antd';
+import { useEffect, useState, useRef } from 'react';
+import { Modal, Button, Form, Input, Space, Drawer, Tabs, Card } from 'antd';
 import {
   FileImageOutlined,
   ImportOutlined,
@@ -9,6 +9,9 @@ import {
   GithubOutlined,
   InfoCircleOutlined,
   ClearOutlined,
+  ZoomInOutlined,
+  ZoomOutOutlined,
+  DownloadOutlined
 
 } from '@ant-design/icons';
 const { TextArea } = Input;
@@ -23,11 +26,16 @@ function App() {
   const [microPythonCode, setMicroPythonCode] = useState("");
   const [form] = Form.useForm();
   const [importForm] = Form.useForm();
-
+  const canvasRef = useRef(null);
+  const [base64, setBase64] = useState("");
   const [eraserMode, setEraserMode] = useState(false);
+  const [zoom, setZoom] = useState(1);
 
   // 初始化像素网格
   const makePixels = (rows, cols) => {
+    const canvas = canvasRef.current;
+    canvas.width = rows;
+    canvas.height = cols;
     const arr = [];
     for (let i = 0; i < cols; i++) {
       const row = [];
@@ -103,8 +111,21 @@ display.show()
     setMicroPythonCode(t)
   }
 
+  const DrawToCanvas = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvasRef.current.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pixels.map((row, rowIndex) => {
+      row.map((pixel, colIndex) => {
+        ctx.fillStyle = pixel === 1 ? "#000" : "#fff";
+        ctx.fillRect(colIndex, rowIndex, 1, 1);
+      });
+    });
+  }
+
   useEffect(() => {
     updateCode();
+    DrawToCanvas();
   }, [pixels])
 
   useEffect(() => {
@@ -198,6 +219,20 @@ display.show()
             key: '2',
             label: 'microPython Code',
             children: <TextArea value={microPythonCode} autoSize />,
+          },
+          {
+            key: '3',
+            label: 'image',
+            children: <Card title="image" extra={<Space>
+              <Button icon={<ZoomInOutlined />} onClick={() => {
+                setZoom(zoom * 2);
+              }} />
+              <Button icon={<ZoomOutOutlined />} onClick={() => {
+                setZoom(zoom / 2);
+              }} />
+            </Space>} style={{ width: 300 }}>
+              <img style={{zoom:zoom}} src={base64} />
+            </Card>,
           }
         ]} onChange={() => { }} />
       </Drawer>
@@ -230,6 +265,9 @@ display.show()
           </Button>
           <Button icon={<ExportOutlined />} onClick={() => {
             setExportisOpen(true);
+            const canvas = canvasRef.current;
+            const base64String = canvas.toDataURL("image/jpeg");
+            setBase64(base64String);
           }}>
             export
           </Button>
@@ -237,23 +275,33 @@ display.show()
         </Space>
       </div>
 
-      <div className='editor'>
-        {pixels.map((row, rowIndex) =>
-          <div className='row'>
-            {
-              row.map((pixel, colIndex) => (
-                <span
-                  key={`${rowIndex}-${colIndex}`}
-                  onClick={() => togglePixel(rowIndex, colIndex)}
-                  className={`pixel ${pixel === 1 ? "black" : "white"
-                    }`}
-                />
-              ))
-            }
+      <Space orientation="vertical" style={{ margin: "20px auto" }}>
+
+        <Card title="editor">
+          <div className='editor'>
+            {pixels.map((row, rowIndex) =>
+              <div className='row'>
+                {
+                  row.map((pixel, colIndex) => (
+                    <span
+                      key={`${rowIndex}-${colIndex}`}
+                      onClick={() => togglePixel(rowIndex, colIndex)}
+                      className={`pixel ${pixel === 1 ? "black" : "white"
+                        }`}
+                    />
+                  ))
+                }
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </Card>
+
+        <Card title="preview">
+          <canvas ref={canvasRef}></canvas>
+        </Card>
+      </Space>
     </div>
+
   );
 }
 
