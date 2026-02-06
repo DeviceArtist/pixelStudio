@@ -1,7 +1,7 @@
 
 import './App.css';
 import { useEffect, useState, useRef } from 'react';
-import { Image, Modal, Button, Form, Input, Space, Drawer, Tabs, Card, Slider, message } from 'antd';
+import { Image, Modal, Button, Form, Input, Space, Drawer, Tabs, Card, Slider, message, Radio } from 'antd';
 import {
   FileImageOutlined,
   ImportOutlined,
@@ -19,15 +19,16 @@ import { loader } from '@monaco-editor/react';
 import Editor from '@monaco-editor/react';
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import { docco } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import { About } from './About';
 const { TextArea } = Input;
 
 
 function App() {
-  console.log(monaco)
   loader.config({ monaco });
   const [messageApi, contextHolder] = message.useMessage();
   const [width, setWidth] = useState(0);
   const [height, setHeight] = useState(0);
+  const [pixelSize, setPixelSize] = useState(1);
   const [aboutisOpen, setAboutisOpen] = useState(false);
   const [newImageisModalOpen, setNewImageIsModalOpen] = useState(false);
   const [importisOpen, setImportisOpen] = useState(false);
@@ -40,13 +41,13 @@ function App() {
   const canvasRef = useRef(null);
   const [base64, setBase64] = useState("");
   const [eraserMode, setEraserMode] = useState(false);
+  const [editZoom, setEditZoom] = useState(1);
   const [zoom, setZoom] = useState(1);
   const [sampleCode, setSampleCode] = useState("");
 
   // 初始化像素网格
   const makePixels = (w, h) => {
-    setWidth(w);
-    setHeight(h)
+    console.log(w, h)
     const arr = [];
     for (let i = 0; i < h; i++) {
       const row = [];
@@ -89,11 +90,6 @@ function App() {
       text += "\r\n";
     });
     text += "]"
-    if (pixels.length !== 0) {
-      form.setFieldValue("width", pixels[0].length);
-      form.setFieldValue("height", pixels.length);
-    }
-
     setCode(text);
 
     let t = `from machine import Pin, I2C
@@ -101,7 +97,7 @@ import ssd1306
 import framebuf
 import time
 i2c = I2C(sda=Pin(4), scl=Pin(5))
-display = ssd1306.SSD1306_I2C(128, 32, i2c)
+display = ssd1306.SSD1306_I2C(${width}, ${height}, i2c)
 
 ICON = ${text}
 
@@ -111,7 +107,7 @@ display.fill(0)
 def draw(ICON):
     for y, row in enumerate(ICON):
         for x, value in enumerate(row):
-            display.fill_rect(x*${zoom}, y*${zoom},x*${zoom}+${zoom},y*${zoom}+${zoom},value)
+            display.fill_rect(x*${pixelSize}, y*${pixelSize},x*${pixelSize}+${pixelSize},y*${pixelSize}+${pixelSize},value)
 
 
 draw(ICON)
@@ -125,10 +121,12 @@ display.show()
     const canvas = canvasRef.current;
     const ctx = canvasRef.current.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     pixels.map((row, rowIndex) => {
       row.map((pixel, colIndex) => {
-        ctx.fillStyle = pixel === 1 ? "#000" : "#fff";
-        ctx.fillRect(colIndex * zoom, rowIndex * zoom, zoom, zoom);
+        ctx.fillStyle = pixel === 1 ? "#08f4fa" : "#000";
+        ctx.fillRect(colIndex * pixelSize * zoom, rowIndex * pixelSize * zoom, pixelSize * zoom, pixelSize * zoom);
       });
     });
   }
@@ -139,8 +137,14 @@ display.show()
   }, [pixels])
 
   useEffect(() => {
-    form.setFieldsValue({ width: 8, height: 8 });
-    makePixels(8, 8);
+    setWidth(128);
+    setHeight(32);
+    setPixelSize(8);
+    makePixels(16, 4);
+    form.setFieldsValue({
+      screenSize: 12832,
+      pixelSize: 8
+    });
   }, [])
 
   useEffect(() => {
@@ -149,7 +153,6 @@ display.show()
 
   useEffect(() => {
     if (monaco) {
-      console.log('here is the monaco instance:', monaco);
       monaco.editor.EditorOptions.minimap.defaultValue.enabled = false;
       if (importisOpen) {
         monaco.editor.EditorOptions.readOnly.defaultValue = false;
@@ -166,7 +169,7 @@ display.show()
     canvas.height = height * zoom;
     DrawToCanvas();
     updateCode();
-  }, [zoom, width, height]);
+  }, [zoom, pixels]);
 
   return (
     <div className="app">
@@ -180,33 +183,59 @@ display.show()
         onCancel={() => setNewImageIsModalOpen(false)}
       >
         <Form
-          labelCol={{ span: 8 }}
-          wrapperCol={{ span: 16 }}
           form={form}
-          name="control-hooks"
-          onFinish={({ width, height }) => {
-            makePixels(width, height);
+          name="new"
+          onFinish={({ screenSize, pixelSize }) => {
+            console.log(screenSize, pixelSize);
+            setWidth(128);
+            setPixelSize(pixelSize);
+            switch (screenSize) {
+              case 12832:
+                setHeight(32);
+                makePixels(128 / pixelSize, 32 / pixelSize);
+                break;
+              case 12864:
+                setHeight(64);
+                makePixels(128 / pixelSize, 64 / pixelSize);
+                break;
+              default:
+                break;
+            }
             setNewImageIsModalOpen(false);
           }}
           style={{ width: "100%" }}
         >
-          <Form.Item name="width" label="width" rules={[{ required: true }]}>
-            <Input />
+          <Form.Item name={"screenSize"} label="Screen size">
+            <Radio.Group
+              options={[
+                { value: 12832, label: '128x32' },
+                { value: 12864, label: '128x64' },
+              ]}
+            />
           </Form.Item>
-          <Form.Item name="height" label="height" rules={[{ required: true }]}>
-            <Input />
+          <Form.Item name="pixelSize" label="pixel size">
+            <Radio.Group
+              options={[
+                { value: 1, label: '1' },
+                { value: 2, label: '2' },
+                { value: 4, label: '4' },
+                { value: 8, label: '8' },
+                { value: 16, label: '16' },
+                { value: 32, label: '32' },
+              ]}
+            />
           </Form.Item>
         </Form>
       </Modal>
 
       <Drawer
-        title="About version 0.2"
+        title="About"
         placement="bottom"
         closable={{ 'aria-label': 'Close Button' }}
         onClose={() => { setAboutisOpen(false) }}
         open={aboutisOpen}
       >
-        <Button icon={<GithubOutlined />} type="link" href="https://github.com/DeviceArtist/pixelStudio" target="_blank">Github</Button>
+        <About />
       </Drawer>
 
       <Drawer
@@ -330,7 +359,9 @@ display.show()
 
       <div>
         <Space>
-          <Button icon={<FileImageOutlined />} onClick={() => setNewImageIsModalOpen(true)}>
+          <Button icon={<FileImageOutlined />} onClick={() => {
+            setNewImageIsModalOpen(true);
+          }}>
             New
           </Button>
           <Button
@@ -368,13 +399,16 @@ display.show()
 
       <Space orientation="vertical" style={{ margin: "20px auto", width: "100%" }}>
 
-        <Card title="editor" style={{ width: "100%" }}>
+        <Card title="editor" style={{ width: "100%" }}
+          extra={<Slider value={editZoom} min={1} max={10} onChange={(value) => setEditZoom(value)} style={{ width: "100px" }} />}
+        >
           <div className='editor'>
             {pixels.map((row, rowIndex) =>
               <div className='row'>
                 {
                   row.map((pixel, colIndex) => (
                     <span
+                      style={{ width: `${pixelSize * editZoom}px`, height: `${pixelSize * editZoom}px` }}
                       key={`${rowIndex}-${colIndex}`}
                       onClick={() => togglePixel(rowIndex, colIndex)}
                       className={`pixel ${pixel === 1 ? "black" : "white"
@@ -386,12 +420,16 @@ display.show()
             )}
           </div>
         </Card>
-
-        <Card title="preview" extra={<Slider value={zoom} min={1} max={10} onChange={(value) => setZoom(value)} style={{ width: "100px" }} />}>
-          <canvas ref={canvasRef}></canvas>
+        <Card title="preview" extra={
+          <></>
+          // <Slider value={zoom} min={1} max={10} onChange={(value) => setZoom(value)} style={{ width: "100px" }} />
+        }>
+          <div className={`canvasWrapper_${width}${height}`}>
+            <canvas ref={canvasRef}></canvas>
+          </div>
         </Card>
       </Space>
-    </div>
+    </div >
 
   );
 }
