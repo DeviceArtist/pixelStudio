@@ -11,10 +11,11 @@
 
 .editor {
   margin: 20px auto;
+  display: grid;
 }
 
 .row {
-  display: flex;
+  display: inline-flex;
 }
 
 .pixel {
@@ -59,25 +60,14 @@ pre {
   margin: 20px auto;
 }
 
-
-.canvasWrapper_12832 {
-  background-size: 100% 100%;
-  width: 190px;
-  height: 65px;
-  background-image: url("/public/12832.jpg");
+.createImageLabel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
-.canvasWrapper_12832 canvas {
-  margin: 15px 35px;
-}
-
-.canvasWrapper_12864 {
-  background-size: 100% 100%;
-  width: 155px;
-  height: 135px;
-  background-image: url("/public/12864.jpg");
-}
-
-.canvasWrapper_12864 canvas{
-  margin: 35px 15px;
+.createImageLabel img {
+  max-width: 100px;
+  max-height: 100px;
 }

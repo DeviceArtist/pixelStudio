@@ -1,31 +1,17 @@
 import { useEffect, useState } from "react";
-import { Tabs, Card, Button } from 'antd';
+import { Tabs, Card, Button, Switch } from 'antd';
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import { docco } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import {
     CopyOutlined,
 } from '@ant-design/icons';
+import { array2DToHex } from "./Tool";
+
 export const ExportCode = ({ pixels, pixelSize, width, height }) => {
-    const [pythonCodeTemp, setPythonCodeTemp] = useState("");
     const [hexCode, setHexCode] = useState("");
     const [microPythonCode, setMicroPythonCode] = useState("");
     const [arrCode, setArrCode] = useState("");
     const [selectedTab, setSelectedTab] = useState("");
-
-    const array2DToHex = (arr) => {
-        if (!Array.isArray(arr)) throw new Error("输入必须是数组");
-        let hexStr = '';
-        for (let i = 0; i < arr.length; i++) {
-            if (!Array.isArray(arr[i])) throw new Error("二维数组的每一行必须也是数组");
-            for (let j = 0; j < arr[i].length; j++) {
-                const val = arr[i][j];
-                if (typeof val !== 'number' || val < 0 || val > 255 || val % 1 !== 0)
-                    throw new Error("数组元素必须是0-255之间的整数");
-                hexStr += val.toString(16).padStart(2, '0');
-            }
-        }
-        return hexStr;
-    }
 
     useEffect(() => {
         const col = pixels.length;
@@ -56,43 +42,31 @@ export const ExportCode = ({ pixels, pixelSize, width, height }) => {
         setArrCode(text);
     }, [pixelSize]);
 
+    const request = (name) => {
+        fetch(`/${name}.txt`).then(res => res.text()).then(text => {
+            let tempText = text.replace("${width}", width).replace("${height}", height).replaceAll("${pixelSize}", pixelSize);
+
+            if (name === "hex") {
+                const arr = hexCode.split(",");
+                tempText = tempText.replace("${code}", arr[3]);
+                tempText = tempText.replace("${rows}", parseInt(arr[0]));
+                tempText = tempText.replace("${cols}", parseInt(arr[1]));
+            }
+            if (name === "arr") {
+                tempText = tempText.replace("${code}", arrCode);
+            }
+
+            setMicroPythonCode(tempText);
+        });
+    }
+
     useEffect(() => {
-        fetch("/default.txt").then(res => res.text()).then(text => setPythonCodeTemp(text));
-    }, [])
-
-
-    useEffect(() => {
-        let t = `from machine import Pin, I2C
-import ssd1306
-import framebuf
-import time
-i2c = I2C(sda=Pin(4), scl=Pin(5))
-display = ssd1306.SSD1306_I2C(${width}, ${height}, i2c)
-
-ICON = ${arrCode}
-
-display.fill(0)
-#display.contrast(1)
-
-def draw(ICON):
-    for y, row in enumerate(ICON):
-        for x, value in enumerate(row):
-            display.fill_rect(x*${pixelSize}, y*${pixelSize},x*${pixelSize}+${pixelSize},y*${pixelSize}+${pixelSize},value)
-
-
-draw(ICON)
-display.show()
-`
-
-        setMicroPythonCode(t)
-    }, [pythonCodeTemp])
+        request("hex");
+    }, [hexCode])
 
     return <Card extra={<Button icon={<CopyOutlined />} onClick={() => {
 
         switch (selectedTab) {
-            case "ArrayCode":
-                navigator.clipboard.writeText(arrCode);
-                break;
             case "HexCode":
                 navigator.clipboard.writeText(hexCode);
                 break;
@@ -107,14 +81,6 @@ display.show()
             setSelectedTab(key);
         }} items={[
             {
-                key: 'ArrayCode',
-                label: 'ArrayCode',
-                children:
-                    <SyntaxHighlighter language="javascipt" style={docco}>
-                        {arrCode}
-                    </SyntaxHighlighter>
-            },
-            {
                 key: 'HexCode',
                 label: 'Hex Code',
                 children:
@@ -125,9 +91,18 @@ display.show()
             }, {
                 key: 'MicroPythonCode',
                 label: 'MicroPython Code',
-                children: <SyntaxHighlighter language="javascipt" style={docco}>
-                    {microPythonCode}
-                </SyntaxHighlighter>
+                children: <>
+                    <Switch onChange={(checked) => {
+                        if (checked) {
+                            request("hex");
+                        } else {
+                            request("arr");
+                        }
+                    }} checkedChildren="stringCode" unCheckedChildren="arrayCode" defaultChecked />
+                    <SyntaxHighlighter language="javascipt" style={docco}>
+                        {microPythonCode}
+                    </SyntaxHighlighter>
+                </>
             }
         ]} />
 
