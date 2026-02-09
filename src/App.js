@@ -8,6 +8,7 @@ import {
   ExportOutlined,
   InfoCircleOutlined,
   ClearOutlined,
+  FileAddOutlined
 } from '@ant-design/icons';
 
 import { About } from './About';
@@ -22,28 +23,31 @@ import { makePixels } from "./Tool";
 function App() {
   const [width, setWidth] = useState(0);
   const [height, setHeight] = useState(0);
+
   const [pixelSize, setPixelSize] = useState(1);
   const [aboutisOpen, setAboutisOpen] = useState(false);
   const [newImageisModalOpen, setNewImageIsModalOpen] = useState(false);
   const [importisOpen, setImportisOpen] = useState(false);
   const [exportisOpen, setExportisOpen] = useState(false);
-  const [pixels, setPixels] = useState([]);
+
+  const [keyframes, setKeyFrames] = useState([]);
 
   const clear = () => {
-    const newPixels = [...pixels];
-    pixels.map((row, rowIndex) => {
-      row.map((pixel, colIndex) => {
-        newPixels[rowIndex][colIndex] = 0;
-      });
-    });
-    setPixels(newPixels);
+    // const newPixels = [...pixels];
+    // pixels.map((row, rowIndex) => {
+    //   row.map((pixel, colIndex) => {
+    //     newPixels[rowIndex][colIndex] = 0;
+    //   });
+    // });
+    // setPixels(newPixels);
+    setKeyFrames([]);
   }
 
   useEffect(() => {
     setWidth(128);
     setHeight(32);
     setPixelSize(8);
-    setPixels(makePixels(16, 4));
+    setKeyFrames([makePixels(16, 4)]);
   }, [])
 
   return (
@@ -52,7 +56,7 @@ function App() {
         setWidth(screenWidth);
         setHeight(screenHeight);
         setPixelSize(pixelSize);
-        setPixels(pixels);
+        setKeyFrames([pixels]);
       }} isOpen={newImageisModalOpen} onClose={() => {
         setNewImageIsModalOpen(false);
       }} />
@@ -79,7 +83,7 @@ function App() {
           setWidth(w);
           setHeight(h);
           setPixelSize(pixelSize);
-          setPixels(pixels);
+          setKeyFrames([pixels]);
           setImportisOpen(false);
         }} />
 
@@ -91,7 +95,7 @@ function App() {
         onClose={() => { setExportisOpen(false) }}
         open={exportisOpen}
       >
-        <ExportCode pixels={pixels} pixelSize={pixelSize} width={width} height={height} />
+        {/* <ExportCode pixels={pixels} pixelSize={pixelSize} width={width} height={height} /> */}
       </Drawer>
 
       <div>
@@ -123,8 +127,27 @@ function App() {
       </div>
 
       <Space orientation="vertical" style={{ margin: "20px auto", width: "100%" }}>
-        <PixelEditor pixels={pixels} pixelSize={pixelSize} onPixelsChange={(arr) => setPixels(arr)} />
-        <PreviewCanvas width={width} height={height} pixels={pixels} pixelSize={pixelSize} />
+        {keyframes.length}
+        <Button icon={<FileAddOutlined />} onClick={() => {
+          const kf = makePixels(width / pixelSize, height / pixelSize);
+          const newKeyframes = [...keyframes];
+          newKeyframes.push(kf);
+          setKeyFrames(newKeyframes);
+        }} />
+        {
+          keyframes.map((pixels, index) => {
+            return <PixelEditor pixels={pixels} pixelSize={pixelSize} onPixelsChange={(arr) => {
+              const temp = [...keyframes];
+              temp.map((pixels, pixelsIndex) => {
+                if (index === pixelsIndex) {
+                  pixels = arr;
+                }
+              });
+              setKeyFrames(temp);
+            }} />
+          })
+        }
+        <PreviewCanvas width={width} height={height} keyframes={keyframes} pixelSize={pixelSize} />
       </Space>
     </div >
 

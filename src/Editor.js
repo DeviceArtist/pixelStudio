@@ -22,7 +22,9 @@ export const PixelEditor = ({ pixels, pixelSize, onPixelsChange }) => {
     };
 
     return <Card title="editor" style={{ width: "100%" }}
-        extra={<Slider value={editZoom} min={1} max={10} onChange={(value) => setEditZoom(value)} style={{ width: "100px" }} />}
+        extra={
+            <Slider value={editZoom} min={1} max={10} onChange={(value) => setEditZoom(value)} style={{ width: "100px" }} />
+        }
     >
         <div className='editor'>
             {pixels.map((row, rowIndex) =>
