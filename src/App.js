@@ -1,6 +1,6 @@
 
 import './App.css';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Image, Modal, Button, Form, Input, Space, Drawer, Tabs, Card, Slider, message, Radio } from 'antd';
 import {
   FileImageOutlined,
@@ -14,17 +14,16 @@ import {
   ZoomOutOutlined,
   DownloadOutlined
 } from '@ant-design/icons';
-import * as monaco from 'monaco-editor';
-import { loader } from '@monaco-editor/react';
-import Editor from '@monaco-editor/react';
-import SyntaxHighlighter from 'react-syntax-highlighter';
-import { docco } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+
 import { About } from './About';
+import { PixelEditor } from './Editor';
+import { PreviewCanvas } from './Preview';
+import { ImportCode } from './ImportCode';
+import { ExportCode } from "./ExportCode";
 const { TextArea } = Input;
 
 
 function App() {
-  loader.config({ monaco });
   const [messageApi, contextHolder] = message.useMessage();
   const [width, setWidth] = useState(0);
   const [height, setHeight] = useState(0);
@@ -34,11 +33,9 @@ function App() {
   const [importisOpen, setImportisOpen] = useState(false);
   const [exportisOpen, setExportisOpen] = useState(false);
   const [pixels, setPixels] = useState([]);
-  const [code, setCode] = useState("");
-  const [microPythonCode, setMicroPythonCode] = useState("");
   const [form] = Form.useForm();
   const [importForm] = Form.useForm();
-  const canvasRef = useRef(null);
+
   const [base64, setBase64] = useState("");
   const [eraserMode, setEraserMode] = useState(false);
   const [editZoom, setEditZoom] = useState(1);
@@ -59,13 +56,6 @@ function App() {
     setPixels(arr);
   };
 
-  // 切换像素状态
-  const togglePixel = (rowIndex, colIndex) => {
-    const newPixels = [...pixels];
-    newPixels[rowIndex][colIndex] = newPixels[rowIndex][colIndex] === 0 ? 1 : 0;
-    setPixels(newPixels);
-  };
-
   const clear = () => {
     const newPixels = [...pixels];
     pixels.map((row, rowIndex) => {
@@ -77,63 +67,11 @@ function App() {
   }
 
   const updateCode = () => {
-    let text = "[";
-    text += "\r\n";
-    pixels.map((row, rowIndex) => {
-      text += "  [";
-      row.map((pixel, colIndex) => {
-        text += pixel;
-        text += colIndex === row.length - 1 ? "" : ",";
-      });
-      text += "]";
-      text += rowIndex === pixels.length - 1 ? "" : ","
-      text += "\r\n";
-    });
-    text += "]"
-    setCode(text);
 
-    let t = `from machine import Pin, I2C
-import ssd1306
-import framebuf
-import time
-i2c = I2C(sda=Pin(4), scl=Pin(5))
-display = ssd1306.SSD1306_I2C(${width}, ${height}, i2c)
-
-ICON = ${text}
-
-display.fill(0)
-#display.contrast(1)
-
-def draw(ICON):
-    for y, row in enumerate(ICON):
-        for x, value in enumerate(row):
-            display.fill_rect(x*${pixelSize}, y*${pixelSize},x*${pixelSize}+${pixelSize},y*${pixelSize}+${pixelSize},value)
-
-
-draw(ICON)
-display.show()
-`
-
-    setMicroPythonCode(t)
-  }
-
-  const DrawToCanvas = () => {
-    const canvas = canvasRef.current;
-    const ctx = canvasRef.current.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#000";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    pixels.map((row, rowIndex) => {
-      row.map((pixel, colIndex) => {
-        ctx.fillStyle = pixel === 1 ? "#08f4fa" : "#000";
-        ctx.fillRect(colIndex * pixelSize * zoom, rowIndex * pixelSize * zoom, pixelSize * zoom, pixelSize * zoom);
-      });
-    });
   }
 
   useEffect(() => {
     updateCode();
-    DrawToCanvas();
   }, [pixels])
 
   useEffect(() => {
@@ -147,27 +85,10 @@ display.show()
     });
   }, [])
 
-  useEffect(() => {
-    fetch("/default.txt").then(res => res.text()).then(text => setSampleCode(text));
-  }, [])
+
+
 
   useEffect(() => {
-    if (monaco) {
-      monaco.editor.EditorOptions.minimap.defaultValue.enabled = false;
-      if (importisOpen) {
-        monaco.editor.EditorOptions.readOnly.defaultValue = false;
-      }
-      if (exportisOpen) {
-        monaco.editor.EditorOptions.readOnly.defaultValue = true;
-      }
-    }
-  }, [monaco, importisOpen, exportisOpen]);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    canvas.width = width * zoom;
-    canvas.height = height * zoom;
-    DrawToCanvas();
     updateCode();
   }, [zoom, pixels]);
 
@@ -245,38 +166,15 @@ display.show()
         onClose={() => { setImportisOpen(false) }}
         open={importisOpen}
       >
-        <Form
-          labelCol={{ span: 8 }}
-          wrapperCol={{ span: 16 }}
-          form={importForm}
-          name="import"
-          onFinish={({ code }) => {
-            console.log(code);
-            const arr = eval(code);
-            setPixels(arr);
-            setImportisOpen(false);
-          }}
-          style={{ width: "100%" }}
-        >
-          <Form.Item name="code" label="code" rules={[{ required: true }]}>
-            <TextArea autoSize style={{ display: "none" }} />
-            <Editor
-              height="200px"
-              language="javascript"
-              onChange={(value) => {
-                setSampleCode(value);
-                importForm.setFieldsValue({
-                  code: value
-                })
-              }}
-              value={sampleCode}
-
-            />
-          </Form.Item>
-          <Form.Item>
-            <Button htmlType="submit">OK</Button>
-          </Form.Item>
-        </Form>
+        <ImportCode onFinish={(pixels, pixelSize, w, h) => {
+          console.log(pixels);
+          setWidth(128);
+          setHeight(32);
+          setPixelSize(pixelSize);
+          makePixels(w, h);
+          setPixels(pixels);
+          setImportisOpen(false);
+        }} />
 
       </Drawer>
 
@@ -286,75 +184,7 @@ display.show()
         onClose={() => { setExportisOpen(false) }}
         open={exportisOpen}
       >
-        <Tabs defaultActiveKey="1" items={[
-          {
-            key: '1',
-            label: 'Array Code',
-            children: <div>
-              {contextHolder}
-              <Button icon={<CopyOutlined />} onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(code);
-                  messageApi.open({
-                    type: 'success',
-                    content: 'Copied!',
-                  });
-                } catch (err) {
-                  messageApi.open({
-                    type: 'error',
-                    content: 'Failed to copy!',
-                  });
-                }
-              }} />
-              <SyntaxHighlighter language="javascipt" style={docco}>
-                {code}
-              </SyntaxHighlighter>
-            </div>,
-          },
-          {
-            key: '2',
-            label: 'microPython Code',
-            children: <div>
-              {contextHolder}
-              <Button icon={<CopyOutlined />} onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(microPythonCode);
-                  messageApi.open({
-                    type: 'success',
-                    content: 'Copied!',
-                  });
-                } catch (err) {
-                  messageApi.open({
-                    type: 'error',
-                    content: 'Failed to copy!',
-                  });
-                }
-              }} />
-              <Editor
-                height="500px"
-                language="python"
-                value={microPythonCode}
-              />
-              {/* <SyntaxHighlighter language="python" style={docco}>
-                {microPythonCode}
-              </SyntaxHighlighter> */}
-            </div>,
-          },
-          {
-            key: '3',
-            label: 'image',
-            children: <Card title="image" extra={<Button icon={<DownloadOutlined onClick={() => {
-              const a = document.createElement("a");
-              a.href = base64;
-              a.download = `pixel.jpg`;
-              a.click();
-            }} />} onClick={() => {
-
-            }} />} style={{ width: 300 }}>
-              <Image src={base64} />
-            </Card>,
-          }
-        ]} onChange={() => { }} />
+        <ExportCode pixels={pixels} pixelSize={pixelSize} width={width} height={height} />
       </Drawer>
 
       <div>
@@ -387,9 +217,9 @@ display.show()
           </Button>
           <Button icon={<ExportOutlined />} onClick={() => {
             setExportisOpen(true);
-            const canvas = canvasRef.current;
-            const base64String = canvas.toDataURL("image/jpeg");
-            setBase64(base64String);
+            // const canvas = canvasRef.current;
+            // const base64String = canvas.toDataURL("image/jpeg");
+            // setBase64(base64String);
           }}>
             export
           </Button>
@@ -402,31 +232,13 @@ display.show()
         <Card title="editor" style={{ width: "100%" }}
           extra={<Slider value={editZoom} min={1} max={10} onChange={(value) => setEditZoom(value)} style={{ width: "100px" }} />}
         >
-          <div className='editor'>
-            {pixels.map((row, rowIndex) =>
-              <div className='row'>
-                {
-                  row.map((pixel, colIndex) => (
-                    <span
-                      style={{ width: `${pixelSize * editZoom}px`, height: `${pixelSize * editZoom}px` }}
-                      key={`${rowIndex}-${colIndex}`}
-                      onClick={() => togglePixel(rowIndex, colIndex)}
-                      className={`pixel ${pixel === 1 ? "black" : "white"
-                        }`}
-                    />
-                  ))
-                }
-              </div>
-            )}
-          </div>
+          <PixelEditor pixels={pixels} pixelSize={pixelSize} editZoom={editZoom} onPixelsChange={(arr) => setPixels(arr)} />
         </Card>
         <Card title="preview" extra={
           <></>
           // <Slider value={zoom} min={1} max={10} onChange={(value) => setZoom(value)} style={{ width: "100px" }} />
         }>
-          <div className={`canvasWrapper_${width}${height}`}>
-            <canvas ref={canvasRef}></canvas>
-          </div>
+          <PreviewCanvas width={width} height={height} pixels={pixels} pixelSize={pixelSize} />
         </Card>
       </Space>
     </div >
