@@ -7,40 +7,32 @@ import {
 } from '@ant-design/icons';
 import { array2DToHex } from "./Tool";
 
-export const ExportCode = ({ pixels, pixelSize, width, height }) => {
+export const ExportCode = ({ keyframes, pixelSize, width, height }) => {
     const [hexCode, setHexCode] = useState("");
     const [microPythonCode, setMicroPythonCode] = useState("");
     const [arrCode, setArrCode] = useState("");
     const [selectedTab, setSelectedTab] = useState("");
 
     useEffect(() => {
-        const col = pixels.length;
-        if (col > 0) {
-            const row = pixels[0].length
-            if (row > 0) {
-                const hex = array2DToHex(pixels)
-                setHexCode(`${row},${col},${pixelSize},${hex}`);
+        if (keyframes.length > 0) {
+            const pixels = keyframes[0];
+            const col = pixels.length;
+            if (col > 0) {
+                const row = pixels[0].length
+                if (row > 0) {
+                    let text = `${row},${col},${pixelSize}`;
+                    keyframes.forEach(pixels => {
+                        const hex = array2DToHex(pixels);
+                        text += `,${hex}`;
+                    });
+                    setHexCode(text);
+                    setArrCode(JSON.stringify(keyframes));
+                }
             }
         }
 
-    }, [pixels, pixelSize, width, height])
+    }, [keyframes, pixelSize, width, height])
 
-    useEffect(() => {
-        let text = "[";
-        text += "\r\n";
-        pixels.map((row, rowIndex) => {
-            text += "  [";
-            row.map((pixel, colIndex) => {
-                text += pixel;
-                text += colIndex === row.length - 1 ? "" : ",";
-            });
-            text += "]";
-            text += rowIndex === pixels.length - 1 ? "" : ","
-            text += "\r\n";
-        });
-        text += "]"
-        setArrCode(text);
-    }, [pixelSize]);
 
     const request = (name) => {
         fetch(`/${name}.txt`).then(res => res.text()).then(text => {

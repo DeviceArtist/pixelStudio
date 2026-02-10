@@ -33,12 +33,21 @@ export const ImportCode = ({ onFinish }) => {
         />
         <Button type="primary" onClick={() => {
             try {
-                const cols = parseInt(code.split(",")[0]);    // image's width
-                const rows = parseInt(code.split(",")[1]);    // image's height
-                const pixelSize = parseInt(code.split(",")[2]);
-                const hexStr = code.split(",")[3];
-                const pixels = hexToArray2D(hexStr, rows, cols);
-                onFinish(pixels, pixelSize, cols * pixelSize, rows * pixelSize);
+                const arr = code.split(",");
+                console.log(arr);
+                const cols = parseInt(arr[0]);    // image's width
+                const rows = parseInt(arr[1]);    // image's height
+                const pixelSize = parseInt(arr[2]);
+
+                const keyframes = [];
+
+                for (let index = 3; index < arr.length; index++) {
+                    const hexStr = arr[index];
+                    const pixels = hexToArray2D(hexStr, rows, cols);
+                    keyframes.push(pixels);
+                }
+
+                onFinish(keyframes, pixelSize, cols * pixelSize, rows * pixelSize);
                 setCode("");
             } catch (error) {
                 console.error(error);

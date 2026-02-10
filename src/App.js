@@ -1,7 +1,7 @@
 
 import './App.css';
 import { useEffect, useState } from 'react';
-import { Button, Space, Drawer } from 'antd';
+import { Button, Space, Drawer, Card } from 'antd';
 import {
   FileImageOutlined,
   ImportOutlined,
@@ -78,12 +78,11 @@ function App() {
         onClose={() => { setImportisOpen(false) }}
         open={importisOpen}
       >
-        <ImportCode onFinish={(pixels, pixelSize, w, h) => {
-          console.log(pixels, pixelSize, w, h);
+        <ImportCode onFinish={(keyframes, pixelSize, w, h) => {
           setWidth(w);
           setHeight(h);
           setPixelSize(pixelSize);
-          setKeyFrames([pixels]);
+          setKeyFrames(keyframes);
           setImportisOpen(false);
         }} />
 
@@ -95,7 +94,7 @@ function App() {
         onClose={() => { setExportisOpen(false) }}
         open={exportisOpen}
       >
-        {/* <ExportCode pixels={pixels} pixelSize={pixelSize} width={width} height={height} /> */}
+        <ExportCode keyframes={keyframes} pixelSize={pixelSize} width={width} height={height} />
       </Drawer>
 
       <div>
@@ -127,27 +126,29 @@ function App() {
       </div>
 
       <Space orientation="vertical" style={{ margin: "20px auto", width: "100%" }}>
-        {keyframes.length}
-        <Button icon={<FileAddOutlined />} onClick={() => {
-          const kf = makePixels(width / pixelSize, height / pixelSize);
-          const newKeyframes = [...keyframes];
-          newKeyframes.push(kf);
-          setKeyFrames(newKeyframes);
-        }} />
-        {
-          keyframes.map((pixels, index) => {
-            return <PixelEditor pixels={pixels} pixelSize={pixelSize} onPixelsChange={(arr) => {
-              const temp = [...keyframes];
-              temp.map((pixels, pixelsIndex) => {
-                if (index === pixelsIndex) {
-                  pixels = arr;
-                }
-              });
-              setKeyFrames(temp);
-            }} />
-          })
-        }
         <PreviewCanvas width={width} height={height} keyframes={keyframes} pixelSize={pixelSize} />
+        <Card title="Editor" style={{ width: "100%" }}
+          extra={<Button icon={<FileAddOutlined />} onClick={() => {
+            const kf = makePixels(width / pixelSize, height / pixelSize);
+            const newKeyframes = [...keyframes];
+            newKeyframes.push(kf);
+            setKeyFrames(newKeyframes);
+          }} />}
+        >
+          {
+            keyframes.map((pixels, index) => {
+              return <PixelEditor title={"KeyFrame" + (index + 1)} pixels={pixels} pixelSize={pixelSize} onPixelsChange={(arr) => {
+                const temp = [...keyframes];
+                temp.forEach((pixels, pixelsIndex) => {
+                  if (index === pixelsIndex) {
+                    pixels = arr;
+                  }
+                });
+                setKeyFrames(temp);
+              }} />
+            })
+          }
+        </Card>
       </Space>
     </div >
 

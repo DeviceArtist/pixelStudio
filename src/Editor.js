@@ -13,7 +13,7 @@ import {
     DownloadOutlined
 } from '@ant-design/icons';
 
-export const PixelEditor = ({ pixels, pixelSize, onPixelsChange }) => {
+export const PixelEditor = ({ title, pixels, pixelSize, onPixelsChange }) => {
     const [editZoom, setEditZoom] = useState(1);
     const togglePixel = (rowIndex, colIndex) => {
         const newPixels = [...pixels];
@@ -21,7 +21,7 @@ export const PixelEditor = ({ pixels, pixelSize, onPixelsChange }) => {
         onPixelsChange(newPixels);
     };
 
-    return <Card title="editor" style={{ width: "100%" }}
+    return <Card title={title} style={{ width: "100%" }}
         extra={
             <Slider value={editZoom} min={1} max={10} onChange={(value) => setEditZoom(value)} style={{ width: "100px" }} />
         }

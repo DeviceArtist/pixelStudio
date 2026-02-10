@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Modal, Button, Form, Input, Space, Drawer, Tabs, Card, Slider, message, Radio } from 'antd';
 import {
     FileImageOutlined,
@@ -12,45 +12,44 @@ import {
     ZoomOutOutlined,
     DownloadOutlined
 } from '@ant-design/icons';
+import * as GIF from "gif.js";
 const img = new Image();
 
 export const PreviewCanvas = ({ width, height, keyframes, pixelSize }) => {
     const canvasRef = useRef(null);
-
-    let index = 0;
-    let time = 0;
+    const [timeHander, setTimeHander] = useState(null);
+    const [makingGIF, setMakingGIF] = useState(false);
 
     const render = (ctx, img, w, h, offsetX, offsetY) => {
-        time = 99;
-        const animate = () => {
+        let index = 0;
+        return setInterval(() => {
+            console.log('rending...', index);
+            if (keyframes.length > index) {
+                const pixels = keyframes[index];
+                ctx.clearRect(0, 0, w, h);
+                ctx.drawImage(img, 0, 0, w, h);
+                ctx.fillStyle = "#000";
 
-            ctx.clearRect(0, 0, w, h);
-            ctx.drawImage(img, 0, 0, w, h);
-            ctx.fillStyle = "#000";
-
-            const pixels = keyframes[index];
-
-            pixels.map((row, rowIndex) => {
-                row.map((pixel, colIndex) => {
-                    ctx.fillStyle = pixel === 1 ? "#08f4fa" : "#000";
-                    ctx.fillRect(colIndex * pixelSize + offsetX, rowIndex * pixelSize + offsetY, pixelSize, pixelSize);
+                pixels.map((row, rowIndex) => {
+                    row.map((pixel, colIndex) => {
+                        ctx.fillStyle = pixel === 1 ? "#08f4fa" : "#000";
+                        ctx.fillRect(colIndex * pixelSize + offsetX, rowIndex * pixelSize + offsetY, pixelSize, pixelSize);
+                    });
                 });
-            });
-
+            }
             index += 1;
-            if (index === keyframes.length) {
+            if (index >= keyframes.length) {
                 index = 0;
             }
-
-            setTimeout(() => {
-                animate();
-            }, 1000);
-        }
-
-        animate();
+        }, 1000);
     }
 
     useEffect(() => {
+        if (makingGIF) {
+            clearInterval(timeHander);
+            return;
+        }
+
         if (width > 0 && height > 0) {
 
             let offsetX, offsetY = 0;
@@ -74,24 +73,143 @@ export const PreviewCanvas = ({ width, height, keyframes, pixelSize }) => {
                     break;
             }
 
-
             img.onload = () => {
                 const canvas = canvasRef.current;
                 const ctx = canvasRef.current.getContext('2d');
                 canvas.width = w;
                 canvas.height = h;
-                render(ctx, img, w, h, offsetX, offsetY);
+                clearInterval(timeHander);
+                setTimeHander(render(ctx, img, w, h, offsetX, offsetY));
             }
         }
-    }, [pixelSize, keyframes]);
+    }, [pixelSize, keyframes, makingGIF]);
     return <Card title="preview" extra={
         <Button icon={<DownloadOutlined />} onClick={() => {
             const canvas = canvasRef.current;
-            const base64String = canvas.toDataURL("image/jpeg");
-            const a = document.createElement("a");
-            a.href = base64String;
-            a.download = `${width}${height}.jpg`;
-            a.click();
+            const ctx = canvasRef.current.getContext('2d');
+            if (keyframes.length === 1) {
+                const base64String = canvas.toDataURL("image/jpeg");
+                const a = document.createElement("a");
+                a.href = base64String;
+                a.download = `${width}${height}.jpg`;
+                a.click();
+            }
+            if (keyframes.length >= 2) {
+                if (width > 0 && height > 0) {
+
+                    let offsetX, offsetY = 0;
+                    let w, h = 0;
+                    switch (height) {
+                        case 32:
+                            img.src = "/12832.jpg";
+                            offsetX = 40;
+                            offsetY = 20;
+                            w = 210;
+                            h = 70;
+                            break;
+                        case 64:
+                            img.src = "/12864.jpg";
+                            offsetX = 10;
+                            offsetY = 38;
+                            w = 150;
+                            h = 140;
+                            break;
+                        default:
+                            break;
+                    }
+
+
+                    img.onload = () => {
+                        const canvas = canvasRef.current;
+                        const ctx = canvasRef.current.getContext('2d');
+                        canvas.width = w;
+                        canvas.height = h;
+                        const gif = new GIF({
+                            workers: 2,
+                            quality: 100,
+                            width: canvas.width,
+                            height: canvas.height,
+                            // workerScript: '/gif.worker.js'
+                        });
+
+
+                        //
+
+                        console.log('gif making start')
+
+                        let index = 0;
+
+                        const render = () => {
+                            if (index < keyframes.length) {
+                                const pixels = keyframes[index];
+                                ctx.clearRect(0, 0, w, h);
+                                ctx.drawImage(img, 0, 0, w, h);
+                                ctx.fillStyle = "#000";
+
+                                pixels.map((row, rowIndex) => {
+                                    row.map((pixel, colIndex) => {
+                                        ctx.fillStyle = pixel === 1 ? "#08f4fa" : "#000";
+                                        ctx.fillRect(colIndex * pixelSize + offsetX, rowIndex * pixelSize + offsetY, pixelSize, pixelSize);
+                                    });
+                                });
+
+                                const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                                gif.addFrame(frame, { delay: 1000 });
+
+
+                                setTimeout(() => {
+                                    index += 1;
+                                    render();
+                                }, 1000);
+
+                            } else {
+                                gif.render();
+                            }
+                        }
+
+                        setMakingGIF(true);
+                        render();
+                        //
+
+
+
+                        // keyframes.forEach(pixels => {
+                        //     ctx.clearRect(0, 0, w, h);
+                        //     ctx.drawImage(img, 0, 0, w, h);
+                        //     ctx.fillStyle = "#000";
+
+                        //     pixels.map((row, rowIndex) => {
+                        //         row.map((pixel, colIndex) => {
+                        //             ctx.fillStyle = pixel === 1 ? "#08f4fa" : "#000";
+                        //             ctx.fillRect(colIndex * pixelSize + offsetX, rowIndex * pixelSize + offsetY, pixelSize, pixelSize);
+                        //         });
+                        //     });
+
+                        //     const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        //     gif.addFrame(frame, { delay: 1000 });
+                        // });
+
+                        gif.on('progress', (p) => {
+                            const percent = Math.round(p * 100);
+                            const showText = `${percent}%`;
+                            console.log(showText);
+                        });
+
+                        gif.on('finished', (blob) => {
+                            // 显示GIF预览
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.href = url;
+                            a.download = `${width}${height}.gif`;
+                            a.click();
+                            setMakingGIF(false);
+                            // window.open(URL.createObjectURL(blob));
+                        });
+
+                    }
+                }
+            }
+
         }} />}>
         <canvas ref={canvasRef}></canvas>
     </Card>
