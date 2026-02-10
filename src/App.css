@@ -33,6 +33,7 @@
 
 .black {
   background-color: #000;
+  border: solid 1px #000;
 }
 
 .white {

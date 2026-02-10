@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Tabs, Card, Button, Switch, Space } from 'antd';
+import { Tabs, Card, Button, Space } from 'antd';
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import { docco } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import {
@@ -34,7 +34,7 @@ export const ExportCode = ({ keyframes, pixelSize, width, height }) => {
 
 
     const request = () => {
-        fetch(`/hex.txt?${Math.floor(Math.random() * (99))}`).then(res => res.text()).then(text => {
+        fetch(`/templates/hex.txt?${Math.floor(Math.random() * (99))}`).then(res => res.text()).then(text => {
             setMicroPythonCode(text.replace("${HEX}", hexCode));
         });
     }

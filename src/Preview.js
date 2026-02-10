@@ -47,14 +47,14 @@ export const PreviewCanvas = ({ width, height, keyframes, pixelSize }) => {
             let w, h = 0;
             switch (height) {
                 case 32:
-                    img.src = "/12832.jpg";
+                    img.src = "/images/12832.jpg";
                     offsetX = 40;
                     offsetY = 20;
                     w = 210;
                     h = 70;
                     break;
                 case 64:
-                    img.src = "/12864.jpg";
+                    img.src = "/images/12864.jpg";
                     offsetX = 10;
                     offsetY = 38;
                     w = 150;
@@ -93,14 +93,14 @@ export const PreviewCanvas = ({ width, height, keyframes, pixelSize }) => {
                     let w, h = 0;
                     switch (height) {
                         case 32:
-                            img.src = "/12832.jpg";
+                            img.src = "/images/12832.jpg";
                             offsetX = 40;
                             offsetY = 20;
                             w = 210;
                             h = 70;
                             break;
                         case 64:
-                            img.src = "/12864.jpg";
+                            img.src = "/images/12864.jpg";
                             offsetX = 10;
                             offsetY = 38;
                             w = 150;

@@ -1,21 +1,10 @@
-import { useState, useEffect, use } from 'react';
-import { Button, Form, Input, message } from 'antd';
-import * as monaco from 'monaco-editor';
-import { loader } from '@monaco-editor/react';
-import Editor from '@monaco-editor/react';
+import { useState, useEffect } from 'react';
+import { Button, message, Input } from 'antd';
 import { hexToArray2D } from "./Tool";
-
+const { TextArea } = Input;
 export const ImportCode = ({ onFinish }) => {
     const [code, setCode] = useState("");
     const [messageApi, contextHolder] = message.useMessage();
-    loader.config({ monaco });
-
-    useEffect(() => {
-        if (monaco) {
-            monaco.editor.EditorOptions.minimap.defaultValue.enabled = false;
-            // monaco.editor.EditorOptions.readOnly.defaultValue = false;
-        }
-    }, [monaco]);
 
     useEffect(() => {
         setCode("");
@@ -23,15 +12,10 @@ export const ImportCode = ({ onFinish }) => {
 
     return <div>
         {contextHolder}
-        <Editor
-            height="400px"
-            language="text"
-            onChange={(value) => {
-                setCode(value);
-            }}
-            value={code}
-        />
-        <Button type="primary" onClick={() => {
+        <TextArea rows={4} value={code} onChange={({ target: { value } }) => {
+            setCode(value);
+        }} />
+        <Button style={{ marginTop: "10px" }} type="primary" onClick={() => {
             try {
                 const arr = code.split(",");
                 console.log(arr);

@@ -52,13 +52,13 @@ export const Create = ({ onCreate, isOpen, onClose }) => {
                     options={[
                         {
                             value: 12832, label: <div className='createImageLabel'>
-                                <img src="/12832.jpg" />
+                                <img src="/images/12832.jpg" />
                                 <p>128x32</p>
                             </div>
                         },
                         {
                             value: 12864, label: <div className='createImageLabel'>
-                                <img src="/12864.jpg" />
+                                <img src="/images/12864.jpg" />
                                 <p>128x64</p>
                             </div>
                         },
