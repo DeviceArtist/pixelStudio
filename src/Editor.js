@@ -1,17 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Card, Slider } from 'antd';
-import {
-    FileImageOutlined,
-    ImportOutlined,
-    ExportOutlined,
-    GithubOutlined,
-    InfoCircleOutlined,
-    ClearOutlined,
-    CopyOutlined,
-    ZoomInOutlined,
-    ZoomOutOutlined,
-    DownloadOutlined
-} from '@ant-design/icons';
 
 export const PixelEditor = ({ title, pixels, pixelSize, onPixelsChange }) => {
     const [editZoom, setEditZoom] = useState(1);

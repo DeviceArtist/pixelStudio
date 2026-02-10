@@ -19,11 +19,8 @@
 }
 
 .pixel {
-  width: 20px;
-  height: 20px;
   background-color: aliceblue;
-  border: solid 1px;
-  margin: -1px;
+  border: solid 1px #ccc;
 }
 
 .pixel:last-child {

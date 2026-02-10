@@ -1,15 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Modal, Button, Form, Input, Space, Drawer, Tabs, Card, Slider, message, Radio } from 'antd';
+import { Button, Card } from 'antd';
 import {
-    FileImageOutlined,
-    ImportOutlined,
-    ExportOutlined,
-    GithubOutlined,
-    InfoCircleOutlined,
-    ClearOutlined,
-    CopyOutlined,
-    ZoomInOutlined,
-    ZoomOutOutlined,
     DownloadOutlined
 } from '@ant-design/icons';
 import * as GIF from "gif.js";
@@ -83,6 +74,7 @@ export const PreviewCanvas = ({ width, height, keyframes, pixelSize }) => {
             }
         }
     }, [pixelSize, keyframes, makingGIF]);
+
     return <Card title="preview" extra={
         <Button icon={<DownloadOutlined />} onClick={() => {
             const canvas = canvasRef.current;
@@ -132,11 +124,6 @@ export const PreviewCanvas = ({ width, height, keyframes, pixelSize }) => {
                             // workerScript: '/gif.worker.js'
                         });
 
-
-                        //
-
-                        console.log('gif making start')
-
                         let index = 0;
 
                         const render = () => {
@@ -169,25 +156,6 @@ export const PreviewCanvas = ({ width, height, keyframes, pixelSize }) => {
 
                         setMakingGIF(true);
                         render();
-                        //
-
-
-
-                        // keyframes.forEach(pixels => {
-                        //     ctx.clearRect(0, 0, w, h);
-                        //     ctx.drawImage(img, 0, 0, w, h);
-                        //     ctx.fillStyle = "#000";
-
-                        //     pixels.map((row, rowIndex) => {
-                        //         row.map((pixel, colIndex) => {
-                        //             ctx.fillStyle = pixel === 1 ? "#08f4fa" : "#000";
-                        //             ctx.fillRect(colIndex * pixelSize + offsetX, rowIndex * pixelSize + offsetY, pixelSize, pixelSize);
-                        //         });
-                        //     });
-
-                        //     const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                        //     gif.addFrame(frame, { delay: 1000 });
-                        // });
 
                         gif.on('progress', (p) => {
                             const percent = Math.round(p * 100);
@@ -196,14 +164,12 @@ export const PreviewCanvas = ({ width, height, keyframes, pixelSize }) => {
                         });
 
                         gif.on('finished', (blob) => {
-                            // 显示GIF预览
                             const url = URL.createObjectURL(blob);
                             const a = document.createElement("a");
                             a.href = url;
                             a.download = `${width}${height}.gif`;
                             a.click();
                             setMakingGIF(false);
-                            // window.open(URL.createObjectURL(blob));
                         });
 
                     }

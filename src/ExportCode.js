@@ -11,7 +11,6 @@ import { array2DToHex, download } from "./Tool";
 export const ExportCode = ({ keyframes, pixelSize, width, height }) => {
     const [hexCode, setHexCode] = useState("");
     const [microPythonCode, setMicroPythonCode] = useState("");
-    const [arrCode, setArrCode] = useState("");
     const [selectedTab, setSelectedTab] = useState("");
 
     useEffect(() => {
@@ -27,7 +26,6 @@ export const ExportCode = ({ keyframes, pixelSize, width, height }) => {
                         text += `,${hex}`;
                     });
                     setHexCode(text);
-                    setArrCode(JSON.stringify(keyframes));
                 }
             }
         }
@@ -35,23 +33,14 @@ export const ExportCode = ({ keyframes, pixelSize, width, height }) => {
     }, [keyframes, pixelSize, width, height])
 
 
-    const request = (name) => {
-        fetch(`/${name}.txt?${Math.floor(Math.random() * (99))}`).then(res => res.text()).then(text => {
-            let tempText = text.replace("${width}", width).replace("${height}", height).replaceAll("${pixelSize}", pixelSize);
-
-            if (name === "hex") {
-                tempText = tempText.replace("${HEX}", hexCode);
-            }
-            if (name === "arr") {
-                tempText = tempText.replace("${code}", arrCode);
-            }
-
-            setMicroPythonCode(tempText);
+    const request = () => {
+        fetch(`/hex.txt?${Math.floor(Math.random() * (99))}`).then(res => res.text()).then(text => {
+            setMicroPythonCode(text.replace("${HEX}", hexCode));
         });
     }
 
     useEffect(() => {
-        request("hex");
+        request();
     }, [hexCode])
 
     return <Card extra={
@@ -75,8 +64,6 @@ export const ExportCode = ({ keyframes, pixelSize, width, height }) => {
                         break;
                     case "MicroPythonCode":
                         download(microPythonCode, `${width}${height}.py`);
-                        // a.href = microPythonCode;
-                        // a.download = `${width}${height}.py`;
                         break;
                     default:
                         break;
@@ -99,14 +86,6 @@ export const ExportCode = ({ keyframes, pixelSize, width, height }) => {
                 key: 'MicroPythonCode',
                 label: 'MicroPython Code',
                 children: <>
-                    <Switch onChange={(checked) => {
-                        if (checked) {
-                            request("hex");
-                        } else {
-                            request("arr");
-                        }
-                    }} checkedChildren="stringCode" unCheckedChildren="arrayCode" defaultChecked />
-                    <p>&nbsp;</p>
                     <p>For MicroPython v1.16 on 2021-06-18</p>
                     <p>ESP module with ESP8266</p>
                     <p></p>
