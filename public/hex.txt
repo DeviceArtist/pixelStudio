@@ -5,7 +5,15 @@ import time
 i2c = I2C(sda=Pin(4), scl=Pin(5))
 display = ssd1306.SSD1306_I2C(${width}, ${height}, i2c)
 
-HEX = "${code}"
+HEXS = "${HEX}"
+HEXArray = HEXS.split(',')
+cols = int(HEXArray[0])
+rows = int(HEXArray[1])
+pixelSize = int(HEXArray[2])
+
+keyframes = []
+for i in range(3, len(HEXArray)):
+    keyframes.append(HEXArray[i])
 
 display.fill(0)
 #display.contrast(1)
@@ -22,11 +30,15 @@ def hex_to_array2d(hex_string, rows, cols):
         result.append(row)
     return result
 
-def draw(ICON):
-    for y, row in enumerate(ICON):
-        for x, value in enumerate(row):
-            display.fill_rect(x*${pixelSize}, y*${pixelSize},x*${pixelSize}+${pixelSize},y*${pixelSize}+${pixelSize},value)
+def draw():
+    for i, hex in enumerate(keyframes):
+        frame = hex_to_array2d(hex,rows,cols)
+        for y, row in enumerate(frame):
+            for x, value in enumerate(row):
+                display.fill_rect(x*pixelSize, y*pixelSize,x*pixelSize+pixelSize,y*pixelSize+pixelSize,value)
+        display.show()
+        time.sleep_ms(500)
 
-
-draw(hex_to_array2d(HEX,${rows},${cols}))
 display.show()
+while True:
+    draw()

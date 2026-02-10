@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Tabs, Card, Button, Switch } from 'antd';
+import { Tabs, Card, Button, Switch, Space } from 'antd';
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import { docco } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import {
     CopyOutlined,
+    DownloadOutlined
 } from '@ant-design/icons';
-import { array2DToHex } from "./Tool";
+import { array2DToHex, download } from "./Tool";
 
 export const ExportCode = ({ keyframes, pixelSize, width, height }) => {
     const [hexCode, setHexCode] = useState("");
@@ -35,14 +36,11 @@ export const ExportCode = ({ keyframes, pixelSize, width, height }) => {
 
 
     const request = (name) => {
-        fetch(`/${name}.txt`).then(res => res.text()).then(text => {
+        fetch(`/${name}.txt?${Math.floor(Math.random() * (99))}`).then(res => res.text()).then(text => {
             let tempText = text.replace("${width}", width).replace("${height}", height).replaceAll("${pixelSize}", pixelSize);
 
             if (name === "hex") {
-                const arr = hexCode.split(",");
-                tempText = tempText.replace("${code}", arr[3]);
-                tempText = tempText.replace("${rows}", parseInt(arr[0]));
-                tempText = tempText.replace("${cols}", parseInt(arr[1]));
+                tempText = tempText.replace("${HEX}", hexCode);
             }
             if (name === "arr") {
                 tempText = tempText.replace("${code}", arrCode);
@@ -56,19 +54,36 @@ export const ExportCode = ({ keyframes, pixelSize, width, height }) => {
         request("hex");
     }, [hexCode])
 
-    return <Card extra={<Button icon={<CopyOutlined />} onClick={() => {
-
-        switch (selectedTab) {
-            case "HexCode":
-                navigator.clipboard.writeText(hexCode);
-                break;
-            case "MicroPythonCode":
-                navigator.clipboard.writeText(microPythonCode);
-                break;
-            default:
-                break;
-        }
-    }} />}>
+    return <Card extra={
+        <Space>
+            <Button icon={<CopyOutlined />} onClick={() => {
+                switch (selectedTab) {
+                    case "HexCode":
+                        navigator.clipboard.writeText(hexCode);
+                        break;
+                    case "MicroPythonCode":
+                        navigator.clipboard.writeText(microPythonCode);
+                        break;
+                    default:
+                        break;
+                }
+            }} />
+            <Button icon={<DownloadOutlined />} onClick={() => {
+                switch (selectedTab) {
+                    case "HexCode":
+                        download(hexCode, `${width}${height}.text`);
+                        break;
+                    case "MicroPythonCode":
+                        download(microPythonCode, `${width}${height}.py`);
+                        // a.href = microPythonCode;
+                        // a.download = `${width}${height}.py`;
+                        break;
+                    default:
+                        break;
+                }
+            }} />
+        </Space>
+    }>
         <Tabs defaultActiveKey="1" onChange={(key) => {
             setSelectedTab(key);
         }} items={[
@@ -91,6 +106,10 @@ export const ExportCode = ({ keyframes, pixelSize, width, height }) => {
                             request("arr");
                         }
                     }} checkedChildren="stringCode" unCheckedChildren="arrayCode" defaultChecked />
+                    <p>&nbsp;</p>
+                    <p>For MicroPython v1.16 on 2021-06-18</p>
+                    <p>ESP module with ESP8266</p>
+                    <p></p>
                     <SyntaxHighlighter language="javascipt" style={docco}>
                         {microPythonCode}
                     </SyntaxHighlighter>

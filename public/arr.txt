@@ -7,14 +7,16 @@ display = ssd1306.SSD1306_I2C(${width}, ${height}, i2c)
 
 ICON = ${code}
 
-display.fill(0)
+
 #display.contrast(1)
 
 def draw(ICON):
-    for y, row in enumerate(ICON):
-        for x, value in enumerate(row):
-            display.fill_rect(x*${pixelSize}, y*${pixelSize},x*${pixelSize}+${pixelSize},y*${pixelSize}+${pixelSize},value)
+    for i ,frame in enumerate(ICON):
+        for y, row in enumerate(frame):
+            for x, value in enumerate(row):
+                display.fill_rect(x*${pixelSize}, y*${pixelSize},x*${pixelSize}+${pixelSize},y*${pixelSize}+${pixelSize},value)
+            display.show()
+            time.sleep_ms(500)
 
-
-draw(ICON)
-display.show()
+while True:
+    draw(ICON)

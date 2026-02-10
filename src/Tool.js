@@ -41,3 +41,14 @@ export const array2DToHex = (arr) => {
     }
     return hexStr;
 }
+
+export const download = (text, filename) => {
+    const file = new File([text], filename, {
+        type: "text/plain"
+    });
+    const url = URL.createObjectURL(file);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+}
