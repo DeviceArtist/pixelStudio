@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Button, Card, Progress } from 'antd';
+import { Space, Button, Card, Progress, Input, Form } from 'antd';
 import {
     DownloadOutlined
 } from '@ant-design/icons';
@@ -12,6 +12,7 @@ export const PreviewCanvas = ({ width, height, keyframes, pixelSize }) => {
     const [timeHander, setTimeHander] = useState(null);
     const [makingGIF, setMakingGIF] = useState(false);
     const [progressValue, setProgressValue] = useState(0);
+    const [delay, setDealy] = useState(1000);
 
     const render = (ctx, w, h) => {
         let index = 0;
@@ -32,7 +33,7 @@ export const PreviewCanvas = ({ width, height, keyframes, pixelSize }) => {
             if (index >= keyframes.length) {
                 index = 0;
             }
-        }, 1000);
+        }, delay);
     }
 
     useEffect(() => {
@@ -47,9 +48,24 @@ export const PreviewCanvas = ({ width, height, keyframes, pixelSize }) => {
             clearInterval(timeHander);
             setTimeHander(render(ctx, canvas.width, canvas.height));
         }
-    }, [pixelSize, keyframes, makingGIF]);
+    }, [delay, pixelSize, keyframes, makingGIF]);
 
-    return <Card title="preview" extra={
+    return <Card title={
+        <Space>
+            <span>preview</span>
+            <Form layout="inline" onFinish={({ delay }) => {
+                console.log(delay);
+                setDealy(delay);
+            }} >
+                <Form.Item name="delay" label="Delay">
+                    <Input defaultValue={delay} />
+                </Form.Item>
+                <Form.Item>
+                    <Button htmlType="submit">change</Button>
+                </Form.Item>
+            </Form>
+        </Space>
+    } extra={
         <Button icon={makingGIF ? <Progress type="circle" percent={progressValue} size={20} /> : <DownloadOutlined />} onClick={() => {
             if (keyframes.length >= 2) {
                 if (width > 0 && height > 0) {
@@ -78,7 +94,7 @@ export const PreviewCanvas = ({ width, height, keyframes, pixelSize }) => {
                         });
 
                         const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                        gif.addFrame(frame, { delay: 1000 });
+                        gif.addFrame(frame, { delay: delay });
                     });
                     gif.render();
 
@@ -89,12 +105,12 @@ export const PreviewCanvas = ({ width, height, keyframes, pixelSize }) => {
                     });
 
                     gif.on('finished', (blob) => {
+                        setMakingGIF(false);
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement("a");
                         a.href = url;
                         a.download = `${width}${height}.gif`;
                         a.click();
-                        setMakingGIF(false);
                     });
                 }
             }
