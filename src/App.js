@@ -23,8 +23,8 @@ import { makePixels } from "./Tool";
 function App() {
   const [width, setWidth] = useState(0);
   const [height, setHeight] = useState(0);
+  const [pixelSize, setPixelSize] = useState(0);
 
-  const [pixelSize, setPixelSize] = useState(1);
   const [aboutisOpen, setAboutisOpen] = useState(false);
   const [newImageisModalOpen, setNewImageIsModalOpen] = useState(false);
   const [importisOpen, setImportisOpen] = useState(false);
@@ -44,19 +44,19 @@ function App() {
   }
 
   useEffect(() => {
-    setWidth(128);
-    setHeight(32);
+    setWidth(8);
+    setHeight(8);
     setPixelSize(8);
-    setKeyFrames([makePixels(16, 4)]);
+    setKeyFrames([makePixels(8, 8)]);
   }, [])
 
   return (
     <div className="app">
-      <Create onCreate={(screenWidth, screenHeight, pixelSize, pixels) => {
-        setWidth(screenWidth);
-        setHeight(screenHeight);
+      <Create onCreate={(width, height, pixelSize, keyframes) => {
+        setWidth(width);
+        setHeight(height);
         setPixelSize(pixelSize);
-        setKeyFrames([pixels]);
+        setKeyFrames(keyframes);
       }} isOpen={newImageisModalOpen} onClose={() => {
         setNewImageIsModalOpen(false);
       }} />
@@ -129,7 +129,7 @@ function App() {
         <PreviewCanvas width={width} height={height} keyframes={keyframes} pixelSize={pixelSize} />
         <Card title="Editor" style={{ width: "100%" }}
           extra={<Button icon={<FileAddOutlined />} onClick={() => {
-            const kf = makePixels(width / pixelSize, height / pixelSize);
+            const kf = makePixels(width, height);
             const newKeyframes = [...keyframes];
             newKeyframes.push(kf);
             setKeyFrames(newKeyframes);
