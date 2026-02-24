@@ -4,7 +4,7 @@ import {
 } from '@ant-design/icons';
 export const About = () => {
     return <>
-        <p>A screen designer</p>
+        <p>A pixel animation designer</p>
         <Button icon={<GithubOutlined />} type="link" href="https://github.com/DeviceArtist/pixelStudio" target="_blank">Github</Button>
     </>
 }
